@@ -1,0 +1,309 @@
+
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Registration Form</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Registration Form</h1>
+        </div>
+
+        <div class="form-section">
+            <div class="form-grid">
+                <div class="form-group">
+                    <input type="text" class="form-input" placeholder="Enter Your Name" id="myname">
+                </div>
+                
+                <div class="form-group">
+                    <input type="number" class="form-input" placeholder="Enter Your Age" id="myage">
+                </div>
+                
+                <div class="form-group">
+                    <input type="email" class="form-input" placeholder="Enter Your Email" id="myemail">
+                </div>
+                
+                <div class="form-group">
+                    <input type="url" class="form-input" placeholder="Enter Your Image URL" id="myupload">
+                </div>
+            </div>
+            
+            <div class="file-upload-section">
+                <p style="color: rgba(255, 255, 255, 0.6); font-size: 14px; margin-top: 5px;">
+                    Enter a valid image URL to display your profile picture
+                </p>
+            </div>
+            
+            <div class="action-buttons">
+                <button type="button" class="btn btn-primary" id="addbtn">Add Record</button>
+                <button type="button" class="btn" onclick="clearfunction()">Clear Form</button>
+            </div>
+        </div>
+
+        <div class="table-section">
+            <h2 style="color: #ffffff; margin-bottom: 20px; font-weight: 400;">Registered Users</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Email</th>
+                        <th>Profile</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="dynamicdata">
+                    <tr>
+                        <td colspan="5" class="no-data">Loading data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script type="module">
+        // Import Firebase functions
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, remove, set } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA5KkJtVOGRzFerLKFRw5poOadNrqxXHN8",
+            authDomain: "learning-afeac.firebaseapp.com",
+            projectId: "learning-afeac",
+            storageBucket: "learning-afeac.firebasestorage.app",
+            messagingSenderId: "11774523837",
+            appId: "1:11774523837:web:0747b117067f484d03fad4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const databasename = getDatabase(app);
+        const collectioname = ref(databasename, "ashwin");
+
+        let myname = document.getElementById("myname");
+        let myage = document.getElementById("myage");
+        let myemail = document.getElementById("myemail");
+        let myupload = document.getElementById("myupload");
+        let addbtn = document.getElementById("addbtn");
+        let dynamicdata = document.getElementById("dynamicdata");
+        let editid = null;
+
+        addbtn.addEventListener("click", async (e) => {
+            e.preventDefault();
+
+            let smallmyname = myname.value.toUpperCase().trim();
+            let smallmyage = myage.value.trim();
+            let smallmyemail = myemail.value.toLowerCase().trim();
+            let smallmyupload = myupload.value.trim();
+
+            if (!smallmyname || !smallmyage || !smallmyemail) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Information',
+                    text: 'Please fill in all required fields (Name, Age, Email)',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    color: '#ffffff',
+                    // backdrop: 'rgba(0, 0, 0, 0.8)'
+                    backdrop : 'rgba(0, 0, 0, 1)'
+                });
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(smallmyemail)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Email',
+                    text: 'Please enter a valid email address',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    color: '#ffffff',
+                    backdrop: 'rgba(0, 0, 0, 1)'
+                });
+                return;
+            }
+
+            if (smallmyage < 1 || smallmyage > 120) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Age',
+                    text: 'Please enter a valid age between 1 and 120',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    color: '#ffffff',
+                    backdrop: 'rgba(0, 0, 0, 1)'
+                });
+                return;
+            }
+
+            addbtn.classList.add('loading');
+            addbtn.textContent = editid ? 'Updating...' : 'Adding...';
+
+            let formattodb = {
+                dbmyname: smallmyname,
+                dbmyage: smallmyage,
+                dbmyemail: smallmyemail,
+                dbmyupload: smallmyupload || 'https://via.placeholder.com/150/336699/ffffff?text=No+Image'
+            };
+
+            try {
+                if (editid) {
+                     set(ref(databasename, `ashwin/${editid}`), formattodb);
+                    editid = null;
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Updated!',
+                        text: 'Record updated successfully',
+                        timer: 2000,
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        color: '#ffffff',
+                        backdrop: 'rgba(0, 0, 0, 0.8)'
+                    });
+                } else {
+                     push(collectioname, formattodb);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Added!',
+                        text: 'Record added successfully',
+                        timer: 2000,
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        color: '#ffffff',
+                        backdrop: 'rgba(0, 0, 0, 0.8)'
+                    });
+                }
+                clearfunction();
+            } catch (error) {
+                console.error("Operation failed:", error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Operation failed. Please try again.',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    color: '#ffffff',
+                    backdrop: 'rgba(0, 0, 0, 0.8)'
+                });
+            } finally {
+                addbtn.classList.remove('loading');
+                addbtn.textContent = editid ? 'Update Record' : 'Add Record';
+            }
+        });
+
+        window.clearfunction = function() {
+            myname.value = '';
+            myage.value = '';
+            myemail.value = '';
+            myupload.value = '';
+            editid = null;
+            addbtn.textContent = 'Add Record';
+        };
+
+        onValue(collectioname, function(snapshot) {
+            dynamicdata.innerHTML = '';
+
+            if (snapshot.exists()) {
+                let sepratingdata = Object.entries(snapshot.val());
+                sepratingdata.forEach(element => {
+                    const dbid = element[0];
+                    const mydata = element[1];
+
+                    dynamicdata.innerHTML += `
+                        <tr>
+                            <td>${mydata.dbmyname}</td>
+                            <td>${mydata.dbmyage}</td>
+                            <td>${mydata.dbmyemail}</td>
+                            <td>
+                                <img src="${mydata.dbmyupload}" 
+                                     alt="Profile" 
+                                     class="profile-image"
+                                     onerror="this.src='https://via.placeholder.com/150/336699/ffffff?text=No+Image'">
+                            </td>
+                            <td>
+                                <button class="action-btn edit-btn editbutton" data-id="${dbid}">Edit</button>
+                                <button class="action-btn delete-btn deletebutton" data-id="${dbid}">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } else {
+                dynamicdata.innerHTML = '<tr><td colspan="5" class="no-data">No data found. Add your first record!</td></tr>';
+            }
+        });
+
+        document.addEventListener("click", async (e) => {
+            if (e.target.classList.contains("editbutton")) {
+                let gettingid = e.target.dataset.id;
+                const trgetting = e.target.closest("tr").children;
+                editid = gettingid;
+
+                myname.value = trgetting[0].innerHTML;
+                myage.value = trgetting[1].innerHTML;
+                myemail.value = trgetting[2].innerHTML;
+                
+                const imgElement = trgetting[3].querySelector('img');
+                myupload.value = imgElement.src !== 'https://via.placeholder.com/150/336699/ffffff?text=No+Image' ? imgElement.src : '';
+                
+                addbtn.textContent = 'Update Record';
+
+                document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth' });
+
+            } else if (e.target.classList.contains("deletebutton")) {
+                let gettingid = e.target.dataset.id;
+                
+                const result = await Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e74c3c',
+                    cancelButtonColor: '#95a5a6',
+                    confirmButtonText: 'Yes, delete it!',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    color: '#ffffff',
+                    backdrop: 'rgba(0, 0, 0, 0.8)'
+                });
+
+                if (result.isConfirmed) {
+                    try {
+                         await remove(ref(databasename, `ashwin/${gettingid}`));
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: 'Record has been deleted.',
+                            icon: 'success',
+                            timer: 2000,
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            color: '#ffffff',
+                            backdrop: 'rgba(0, 0, 0, 0.8)'
+                        });
+                    } catch (error) {
+                        console.error("Delete failed:", error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Delete operation failed. Please try again.',
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            color: '#ffffff',
+                            backdrop: 'rgba(0, 0, 0, 0.8)'
+                        });
+                    }
+                }
+            }
+        });
+
+        const inputs = document.querySelectorAll('.form-input');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'scale(1.02)';
+                this.parentElement.style.transition = 'transform 0.3s ease';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>
