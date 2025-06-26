@@ -65,23 +65,30 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script type="module">
-        // Import Firebase functions
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove, set } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+       
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+        import { getDatabase,ref,push,set,onValue,remove } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+        
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
 
-        // Firebase configuration
+        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyA5KkJtVOGRzFerLKFRw5poOadNrqxXHN8",
             authDomain: "learning-afeac.firebaseapp.com",
+            databaseURL: "https://learning-afeac-default-rtdb.firebaseio.com",
             projectId: "learning-afeac",
             storageBucket: "learning-afeac.firebasestorage.app",
             messagingSenderId: "11774523837",
             appId: "1:11774523837:web:0747b117067f484d03fad4"
         };
 
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const databasename = getDatabase(app);
         const collectioname = ref(databasename, "ashwin");
@@ -152,7 +159,7 @@
 
             try {
                 if (editid) {
-                     set(ref(databasename, `ashwin/${editid}`), formattodb);
+                    await set(ref(databasename, `ashwin/${editid}`), formattodb);
                     editid = null;
                     Swal.fire({
                         icon: 'success',
@@ -164,7 +171,7 @@
                         backdrop: 'rgba(0, 0, 0, 0.8)'
                     });
                 } else {
-                     push(collectioname, formattodb);
+                     await push(collectioname, formattodb);
                     Swal.fire({
                         icon: 'success',
                         title: 'Added!',
